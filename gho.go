@@ -8,6 +8,22 @@ import (
 )
 
 func main() {
+	url := getUrlFromGitRemote()
+	openUrlInBrowser(url)
+}
+func openUrlInBrowser(url string) {
+	cmd := exec.Command("open", url)
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Printf("Error executing 'open %s' command\n", url)
+		fmt.Println(err.Error())
+	}
+	if string(output) != "" {
+		fmt.Println("open output")
+		fmt.Println(string(output))
+	}
+}
+func getUrlFromGitRemote() string {
 	cmd := exec.Command("git", "remote", "-v")
 	cmd.Stderr = os.Stderr
 	output, err := cmd.Output()
@@ -15,14 +31,8 @@ func main() {
 		fmt.Println("Error executing 'git remote -v' command")
 		fmt.Println(err.Error())
 	}
-	url := parseUrlFromSsh(string(output))
-	fmt.Printf("output\n%+v\n", url)
-	cmd = exec.Command("open", url)
-	output, err = cmd.Output()
-	if err != nil {
-		fmt.Printf("Error executing 'open %s' command\n", url)
-		fmt.Println(err.Error())
-	}
+	url := parseUrl(string(output))
+	return url
 }
 
 type githubOrigin struct {
@@ -35,8 +45,25 @@ func (gh *githubOrigin) getUrl() string {
 	return fmt.Sprintf("http://%s/%s/%s", gh.domain, gh.repoOwner, gh.repoName)
 }
 
-func parseUrlFromSsh(gitSshUrl string) string {
+type gitUrlRepresentation int
+
+const (
+	ssh gitUrlRepresentation = iota
+	https
+)
+
+func getGitUrlRepr(gitRemoteOutput string) gitUrlRepresentation {
+	match, _ := regexp.MatchString("https://", gitRemoteOutput)
+	if match {
+		return https
+	} else {
+		return ssh
+	}
+}
+func parseUrl(gitSshUrl string) string {
 	gh := githubOrigin{}
+	gitUrlRepr := getGitUrlRepr(gitSshUrl)
+	fmt.Printf("repr is %d\n", gitUrlRepr)
 	gh.domain = parseGithubDomain(gitSshUrl)
 	gh.repoName = parseGithubRepoName(gitSshUrl)
 	gh.repoOwner = parseGithubRepoOwner(gitSshUrl)

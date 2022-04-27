@@ -1,3 +1,3 @@
-module github.com/andrewwillette/gh
+module github.com/andrewwillette/gho
 
 go 1.18
