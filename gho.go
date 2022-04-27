@@ -52,6 +52,17 @@ const (
 	https
 )
 
+func (gur gitUrlRepresentation) String() string {
+	switch gur {
+	case ssh:
+		return "ssh"
+	case https:
+		return "https"
+	default:
+		return "unsupported git url rep"
+	}
+}
+
 func getGitUrlRepr(gitRemoteOutput string) gitUrlRepresentation {
 	match, _ := regexp.MatchString("https://", gitRemoteOutput)
 	if match {
@@ -60,17 +71,30 @@ func getGitUrlRepr(gitRemoteOutput string) gitUrlRepresentation {
 		return ssh
 	}
 }
-func parseUrl(gitSshUrl string) string {
+
+// parseUrl get url from 'git remote -v' output
+func parseUrl(gitRemoteOutput string) string {
 	gh := githubOrigin{}
-	gitUrlRepr := getGitUrlRepr(gitSshUrl)
-	fmt.Printf("repr is %d\n", gitUrlRepr)
-	gh.domain = parseGithubDomain(gitSshUrl)
-	gh.repoName = parseGithubRepoName(gitSshUrl)
-	gh.repoOwner = parseGithubRepoOwner(gitSshUrl)
-	return gh.getUrl()
+	gitUrlRepr := getGitUrlRepr(gitRemoteOutput)
+	switch gitUrlRepr {
+	case ssh:
+		gh.domain = parseGithubDomainSsh(gitRemoteOutput)
+		gh.repoName = parseGithubRepoNameSsh(gitRemoteOutput)
+		gh.repoOwner = parseGithubRepoOwnerSsh(gitRemoteOutput)
+		return gh.getUrl()
+	case https:
+		gh.domain = parseGithubDomainHttps(gitRemoteOutput)
+		gh.repoName = parseGithubRepoNameHttps(gitRemoteOutput)
+		gh.repoOwner = parseGithubRepoOwnerHttps(gitRemoteOutput)
+		println("https git remotes not supported yet")
+		os.Exit(1)
+		return gh.getUrl()
+	default:
+		return "invalid gitUrlRepr"
+	}
 }
 
-func parseGithubDomain(gitSshUrl string) string {
+func parseGithubDomainSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`.*fetch`)
 	result1 := r.FindString(gitSshUrl)
 	r, _ = regexp.Compile(`@.*\.com`)
@@ -79,17 +103,40 @@ func parseGithubDomain(gitSshUrl string) string {
 	result3 := r.FindString(result2)
 	return result3
 }
-func parseGithubRepoOwner(gitSshUrl string) string {
+
+func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`:.*/`)
 	result1 := r.FindString(gitSshUrl)
 	r, _ = regexp.Compile(`[^:][a-z]*`)
 	result2 := r.FindString(result1)
 	return result2
 }
-func parseGithubRepoName(gitSshUrl string) string {
+
+func parseGithubRepoNameSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`/.*\.git`)
 	result1 := r.FindString(gitSshUrl)
 	r, _ = regexp.Compile(`[^/][\w|\d]*`)
+	result2 := r.FindString(result1)
+	return result2
+}
+
+func parseGithubDomainHttps(gitHttpsUrl string) string {
+	r, _ := regexp.Compile(`https://\w*\.com`)
+	result1 := r.FindString(gitHttpsUrl)
+	return result1
+}
+
+func parseGithubRepoOwnerHttps(gitHttpsUrl string) string {
+	r, _ := regexp.Compile(`com/\w*/`)
+	result1 := r.FindString(gitHttpsUrl)
+	r, _ = regexp.Compile(`[^com/]\w*`)
+	result2 := r.FindString(result1)
+	return result2
+}
+func parseGithubRepoNameHttps(gitHttpsUrl string) string {
+	r, _ := regexp.Compile(`\.*/.*\.git`)
+	result1 := r.FindString(gitHttpsUrl)
+	r, _ = regexp.Compile(`[^com/]\w*`)
 	result2 := r.FindString(result1)
 	return result2
 }
