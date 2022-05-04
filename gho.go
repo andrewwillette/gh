@@ -11,6 +11,7 @@ func main() {
 	url := getUrlFromGitRemote()
 	openUrlInBrowser(url)
 }
+
 func openUrlInBrowser(url string) {
 	cmd := exec.Command("open", url)
 	output, err := cmd.Output()
@@ -115,7 +116,7 @@ func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 func parseGithubRepoNameSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`/.*\.git`)
 	result1 := r.FindString(gitSshUrl)
-	r, _ = regexp.Compile(`[^/][\w|\d]*`)
+	r, _ = regexp.Compile(`[^/][\w|\d|-]*`)
 	result2 := r.FindString(result1)
 	return result2
 }
@@ -133,6 +134,7 @@ func parseGithubRepoOwnerHttps(gitHttpsUrl string) string {
 	result2 := r.FindString(result1)
 	return result2
 }
+
 func parseGithubRepoNameHttps(gitHttpsUrl string) string {
 	r, _ := regexp.Compile(`\.*/.*\.git`)
 	result1 := r.FindString(gitHttpsUrl)
