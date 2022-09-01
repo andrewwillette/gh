@@ -108,7 +108,7 @@ func parseGithubDomainSsh(gitSshUrl string) string {
 func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`:.*/`)
 	result1 := r.FindString(gitSshUrl)
-	r, _ = regexp.Compile(`[^:][a-z]*`)
+	r, _ = regexp.Compile(`[^:][\w|\d|-]*`)
 	result2 := r.FindString(result1)
 	return result2
 }
