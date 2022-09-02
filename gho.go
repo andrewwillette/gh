@@ -24,6 +24,7 @@ func openUrlInBrowser(url string) {
 		fmt.Println(string(output))
 	}
 }
+
 func getUrlFromGitRemote() string {
 	cmd := exec.Command("git", "remote", "-v")
 	cmd.Stderr = os.Stderr
