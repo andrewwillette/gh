@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+
+	"github.com/rs/zerolog/log"
 )
 
 func main() {
@@ -107,6 +109,7 @@ func parseGithubDomainSsh(gitSshUrl string) string {
 }
 
 func parseGithubRepoOwnerSsh(gitSshUrl string) string {
+	log.Debug().Msg("parseGithubRepoOwnerSsh")
 	r, _ := regexp.Compile(`:.*/`)
 	result1 := r.FindString(gitSshUrl)
 	r, _ = regexp.Compile(`[^:][\w|\d|-|\.]*`)
