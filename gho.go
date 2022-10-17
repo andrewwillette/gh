@@ -1,15 +1,28 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
+func configureLogging() {
+	debug := flag.Bool("v", false, "set verbose logging")
+	flag.Parse()
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if *debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+}
+
 func main() {
+	configureLogging()
 	url := getUrlFromGitRemote()
 	openUrlInBrowser(url)
 }
@@ -18,24 +31,23 @@ func openUrlInBrowser(url string) {
 	cmd := exec.Command("open", url)
 	output, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Error executing 'open %s' command\n", url)
-		fmt.Println(err.Error())
+		log.Err(err)
+		log.Error().Msgf("url: %s", url)
 	}
 	if string(output) != "" {
-		fmt.Println("open output")
-		fmt.Println(string(output))
+		log.Warn().Msgf("open url returned output: %s", string(output))
 	}
 }
 
 func getUrlFromGitRemote() string {
-	cmd := exec.Command("git", "remote", "-v")
-	cmd.Stderr = os.Stderr
-	output, err := cmd.Output()
+	cmd := "git remote -v | grep push"
+	out, err := exec.Command("bash", "-c", cmd).Output()
+	log.Debug().Msgf("git remote -v output: %s", out)
 	if err != nil {
-		fmt.Println("Error executing 'git remote -v' command")
-		fmt.Println(err.Error())
+		log.Error().Msg("Error executing 'git remote -v' command")
+		log.Err(err)
 	}
-	url := parseUrl(string(output))
+	url := parseUrl(string(out))
 	return url
 }
 
@@ -46,6 +58,8 @@ type githubOrigin struct {
 }
 
 func (gh *githubOrigin) getUrl() string {
+	log.Debug().Msg("githubOrigin#getUrl")
+	log.Debug().Msgf("%+v", gh)
 	return fmt.Sprintf("http://%s/%s/%s", gh.domain, gh.repoOwner, gh.repoName)
 }
 
@@ -70,8 +84,10 @@ func (gur gitUrlRepresentation) String() string {
 func getGitUrlRepr(gitRemoteOutput string) gitUrlRepresentation {
 	match, _ := regexp.MatchString("https://", gitRemoteOutput)
 	if match {
+		log.Debug().Msg("git remote is of type https.")
 		return https
 	} else {
+		log.Debug().Msg("git remote is of type ssh.")
 		return ssh
 	}
 }
@@ -99,12 +115,16 @@ func parseUrl(gitRemoteOutput string) string {
 }
 
 func parseGithubDomainSsh(gitSshUrl string) string {
-	r, _ := regexp.Compile(`.*fetch`)
+	log.Debug().Msg("parseGithubDomainSsh")
+	r, _ := regexp.Compile(`.*push`)
 	result1 := r.FindString(gitSshUrl)
-	r, _ = regexp.Compile(`@.*\.com`)
+	log.Debug().Msgf("result1: %s", result1)
+	r, _ = regexp.Compile(`@([^:].)*`)
 	result2 := r.FindString(result1)
+	log.Debug().Msgf("result2: %s", result2)
 	r, _ = regexp.Compile(`[^@].*`)
 	result3 := r.FindString(result2)
+	log.Debug().Msgf("result3: %s", result3)
 	return result3
 }
 
@@ -112,16 +132,21 @@ func parseGithubRepoOwnerSsh(gitSshUrl string) string {
 	log.Debug().Msg("parseGithubRepoOwnerSsh")
 	r, _ := regexp.Compile(`:.*/`)
 	result1 := r.FindString(gitSshUrl)
+	log.Debug().Msgf("result1: %s", result1)
 	r, _ = regexp.Compile(`[^:][\w|\d|-|\.]*`)
 	result2 := r.FindString(result1)
+	log.Debug().Msgf("result2: %s", result2)
 	return result2
 }
 
 func parseGithubRepoNameSsh(gitSshUrl string) string {
+	log.Debug().Msgf("parseGithubRepoNameSsh %s", gitSshUrl)
 	r, _ := regexp.Compile(`/.*\.git`)
 	result1 := r.FindString(gitSshUrl)
-	r, _ = regexp.Compile(`[^/][\w|\d|-]*`)
+	log.Debug().Msgf("result1: %s", result1)
+	r, _ = regexp.Compile(`[^/](\w|\d|-|\.)*[^(.git)]`)
 	result2 := r.FindString(result1)
+	log.Debug().Msgf("result2: %s", result2)
 	return result2
 }
 
