@@ -6,25 +6,42 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"runtime"
+	"runtime/pprof"
 
-	"github.com/rs/zerolog"
+	"github.com/andrewwillette/gocommon"
 	"github.com/rs/zerolog/log"
 )
 
-func configureLogging() {
-	debug := flag.Bool("v", false, "set verbose logging")
-	flag.Parse()
-	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	if *debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	}
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-}
+type gitUrlRepresentation int
+
+const (
+	ssh gitUrlRepresentation = iota
+	https
+)
+
+var (
+	cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
+)
 
 func main() {
-	configureLogging()
+	flag.Parse()
+	gocommon.ConfigureZerolog()
+	configureProfiling()
+	defer pprof.StopCPUProfile()
 	url := getUrlFromGitRemote()
 	openUrlInBrowser(url)
+}
+
+func configureProfiling() {
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Err(err)
+		}
+		runtime.SetCPUProfileRate(1000000)
+		pprof.StartCPUProfile(f)
+	}
 }
 
 func openUrlInBrowser(url string) {
@@ -62,13 +79,6 @@ func (gh *githubOrigin) getUrl() string {
 	log.Debug().Msgf("%+v", gh)
 	return fmt.Sprintf("http://%s/%s/%s", gh.domain, gh.repoOwner, gh.repoName)
 }
-
-type gitUrlRepresentation int
-
-const (
-	ssh gitUrlRepresentation = iota
-	https
-)
 
 func (gur gitUrlRepresentation) String() string {
 	switch gur {
