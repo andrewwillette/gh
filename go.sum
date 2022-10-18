@@ -1,3 +1,5 @@
+github.com/andrewwillette/gocommon v0.0.0-20221017034821-5ee144c73a90 h1:++sEuRVEyhx/kfqw28vZrVcBNBm+eCI7HVwP+M1dN7g=
+github.com/andrewwillette/gocommon v0.0.0-20221017034821-5ee144c73a90/go.mod h1:ClDHfFJ+4G0ewIEUWJffZWHjNjKxkfta4k4te4XhPCA=
 github.com/coreos/go-systemd/v22 v22.3.3-0.20220203105225-a9a7ef127534/go.mod h1:Y58oyj3AT4RCenI/lSvhwexgC+NSVTIJ3seZv2GcEnc=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
