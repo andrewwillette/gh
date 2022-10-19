@@ -26,7 +26,7 @@ var (
 
 func main() {
 	flag.Parse()
-	gocommon.ConfigureZerolog()
+	gocommon.ConfigureConsoleZerolog()
 	configureProfiling()
 	defer pprof.StopCPUProfile()
 	url := getUrlFromGitRemote()
