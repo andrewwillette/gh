@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 
 	"github.com/andrewwillette/gocommon"
 	"github.com/rs/zerolog/log"
@@ -154,10 +155,12 @@ func parseGithubRepoNameSsh(gitSshUrl string) string {
 	r, _ := regexp.Compile(`/.*\.git`)
 	result1 := r.FindString(gitSshUrl)
 	log.Debug().Msgf("result1: %s", result1)
-	r, _ = regexp.Compile(`[^/](\w|\d|-|\.)*[^(.git)]`)
+	r, _ = regexp.Compile(`[^/](\w|\d|-|\.)*`)
 	result2 := r.FindString(result1)
 	log.Debug().Msgf("result2: %s", result2)
-	return result2
+	result3 := strings.TrimSuffix(result2, ".git")
+	log.Debug().Msgf("result3: %s", result3)
+	return result3
 }
 
 func parseGithubDomainHttps(gitHttpsUrl string) string {
