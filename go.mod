@@ -1,6 +1,6 @@
 module github.com/andrewwillette/gho
 
-go 1.18
+go 1.23
 
 require (
 	github.com/andrewwillette/gocommon v0.0.0-20221019010928-128b21f40054
